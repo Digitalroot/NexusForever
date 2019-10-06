@@ -27,6 +27,7 @@ using NexusForever.WorldServer.Game.Social;
 using NexusForever.WorldServer.Game.Spell;
 using NexusForever.WorldServer.Game.Storefront;
 using NexusForever.WorldServer.Network;
+using NexusForever.WorldServer.Game.Combat;
 
 namespace NexusForever.WorldServer
 {
@@ -93,6 +94,7 @@ namespace NexusForever.WorldServer
 
             MessageManager.Instance.Initialise();
             SocialManager.Instance.Initialise();
+            DamageCalculator.Instance.Initialise();
             NetworkManager<WorldSession>.Instance.Initialise(ConfigurationManager<WorldServerConfiguration>.Instance.Config.Network);
             WorldManager.Instance.Initialise(lastTick =>
             {
