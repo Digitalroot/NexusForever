@@ -60,7 +60,8 @@
         var socket;
         var scheme = document.location.protocol == "https:" ? "wss" : "ws";
         var port = document.location.port ? (":" + document.location.port) : "";
-        connectionUrl.value = scheme + "://" + document.location.hostname + port + "/ws/commands";
+        //        connectionUrl.value = scheme + "://" + document.location.hostname + port + "/ws/commands";
+        connectionUrl.value = "ws://localhost:5000/ws/commands"; // Default is localhost:5000, See WorldServerEmbeddedWebServer.cs
 
         function updateState() {
             function disable() {
