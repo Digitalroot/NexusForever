@@ -1,15 +1,16 @@
-﻿using System;
+﻿using NexusForever.Shared;
+using NexusForever.WorldServer.Command.Context;
+using NexusForever.WorldServer.Command.Convert;
+using NexusForever.WorldServer.Command.Static;
+using NLog;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using NexusForever.Shared;
-using NexusForever.WorldServer.Command.Context;
-using NexusForever.WorldServer.Command.Convert;
-using NexusForever.WorldServer.Command.Static;
-using NLog;
+using System.Threading.Tasks;
 
 namespace NexusForever.WorldServer.Command
 {
@@ -42,19 +43,19 @@ namespace NexusForever.WorldServer.Command
             var factoryBuilder = ImmutableDictionary.CreateBuilder<Type, ParameterConverterFactoryDelegate>();
             var defaultBuilder = ImmutableDictionary.CreateBuilder<Type, Type>();
 
-            foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
+            Parallel.ForEach(Assembly.GetExecutingAssembly().GetTypes(), type =>
             {
                 if (!typeof(IParameterConvert).IsAssignableFrom(type))
-                    continue;
+                    return;
 
                 ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
                 if (constructor == null)
-                    continue;
+                    return;
 
                 // generic converters are a special case that need handling from the parameter attribute
                 // at this point we have no idea what the generic parameter replacements should be
                 if (type.IsGenericTypeDefinition)
-                    continue;
+                    return;
 
                 NewExpression @new = Expression.New(constructor);
                 factoryBuilder.Add(type, Expression.Lambda<ParameterConverterFactoryDelegate>(@new).Compile());
@@ -63,37 +64,35 @@ namespace NexusForever.WorldServer.Command
                 ConvertAttribute attribute = type.GetCustomAttribute<ConvertAttribute>();
                 if (attribute != null)
                     defaultBuilder.Add(attribute.Type, type);
-            }
+            });
 
             // special case for generic converters
-            foreach (MethodInfo method in Assembly.GetExecutingAssembly()
-                .GetTypes()
-                .SelectMany(t => t.GetMethods()))
+            Parallel.ForEach(Assembly.GetExecutingAssembly().GetTypes().SelectMany(t => t.GetMethods()), method =>
             {
                 CommandAttribute attribute = method.GetCustomAttribute<CommandAttribute>();
                 if (attribute == null)
-                    continue;
+                    return;
 
-                foreach (ParameterInfo parameter in method.GetParameters())
+                Parallel.ForEach(method.GetParameters(), parameter =>
                 {
                     ParameterAttribute parameterAttribute = parameter.GetCustomAttribute<ParameterAttribute>();
                     if (parameterAttribute == null)
-                        continue;
+                        return;
 
                     if (!parameterAttribute.Converter?.IsGenericType ?? true)
-                        continue;
+                        return;
 
                     ConstructorInfo constructor = parameterAttribute.Converter.GetConstructor(Type.EmptyTypes);
                     if (constructor == null)
-                        continue;
+                        return;
 
                     if (factoryBuilder.ContainsKey(parameterAttribute.Converter))
-                        continue;
+                        return;
 
                     NewExpression @new = Expression.New(constructor);
                     factoryBuilder.Add(parameterAttribute.Converter, Expression.Lambda<ParameterConverterFactoryDelegate>(@new).Compile());
-                }
-            }
+                });
+            });
 
             converterFactories        = factoryBuilder.ToImmutable();
             defaultConverterFactories = defaultBuilder.ToImmutable();
@@ -103,27 +102,29 @@ namespace NexusForever.WorldServer.Command
         {
             log.Info("Initialising command handlers...");
 
-            var builder = ImmutableDictionary.CreateBuilder<string, ICommandHandler>(
-                StringComparer.InvariantCultureIgnoreCase);
-            foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
+            var builder = ImmutableDictionary.CreateBuilder<string, ICommandHandler>(StringComparer.InvariantCultureIgnoreCase);
+
+            Parallel.ForEach(Assembly.GetExecutingAssembly().GetTypes(), type =>
             {
                 CommandAttribute attribute = type.GetCustomAttribute<CommandAttribute>();
                 if (attribute == null)
-                    continue;
+                    return;
 
                 // initialise only the parent, the children will be initialised from the parent itself
                 if (type.IsNested)
-                    continue;
+                    return;
 
                 if (!typeof(CommandCategory).IsAssignableFrom(type))
-                    continue;
+                    return;
 
                 CommandCategory category = (CommandCategory)Activator.CreateInstance(type);
-                category.Build(attribute);
+                category?.Build(attribute);
 
-                foreach (string command in attribute.Commands)
+                Parallel.ForEach(attribute.Commands, command =>
+                {
                     builder.Add(command, category);
-            }
+                });
+            });
 
             handlers = builder.ToImmutable();
         }
@@ -239,7 +240,7 @@ namespace NexusForever.WorldServer.Command
                 {
                     if (rootHandler.CanInvoke(context) != CommandResult.Ok)
                         continue;
-
+                    
                     builder.Append("Category: ");
                     rootHandler.GetHelp(builder, context, false);
                 }
