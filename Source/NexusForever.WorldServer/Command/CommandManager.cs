@@ -164,8 +164,13 @@ namespace NexusForever.WorldServer.Command
                 return result switch
                 {
                     // generic result for NoPermission and NoCommand to prevent command scraping
+#if DEBUG
+                    CommandResult.NoPermission      => "Unable to invoke command, you don't have permission to access it.",
+                    CommandResult.NoCommand         => "Unable to invoke command, it's an invalid command.",
+#else
                     CommandResult.NoPermission      => "Unable to invoke command, it's either an invalid command or you don't have permission to access it!",
                     CommandResult.NoCommand         => "Unable to invoke command, it's either an invalid command or you don't have permission to access it!",
+#endif
                     CommandResult.InvalidParameters => "Invalid parameters supplied to command, see help for more information!",
                     CommandResult.InvalidContext    => "Invalid context for this command!",
                     CommandResult.InvalidTarget     => "Invalid target for this command!",
@@ -180,7 +185,8 @@ namespace NexusForever.WorldServer.Command
 
         private CommandResult HandleCommandInternal(ICommandContext context, string commandText)
         {
-            string[] parameters = commandText.Split(' ');
+            // Remove whitespace from commands.
+            string[] parameters = commandText.Split(' ').Select(c=> c.Trim()).Where(p => !string.IsNullOrEmpty(p) && !string.IsNullOrWhiteSpace(p)).ToArray();
 
             var queue = new ParameterQueue(parameters);
             if (queue.Count == 0)
