@@ -7,7 +7,7 @@ using NexusForever.WorldServer.Game.Social.Static;
 using NexusForever.WorldServer.Network;
 using NLog;
 using System;
-using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
@@ -24,8 +24,10 @@ namespace NexusForever.WorldServer.Command.Handler
             string message)
         {
             WorldServer.RealmMotd = message;
-            foreach (WorldSession session in NetworkManager<WorldSession>.Instance.GetSessions())
+            Parallel.ForEach(NetworkManager<WorldSession>.Instance.GetSessions(), session =>
+            {
                 SocialManager.Instance.SendMessage(session, WorldServer.RealmMotd, "MOTD", ChatChannel.Realm);
+            });
         }
 
         #region Shutdown Command
@@ -57,7 +59,6 @@ namespace NexusForever.WorldServer.Command.Handler
                 HandleShutdownTick(timer);
             }
         }
-
         private static void HandleShutdownTick(Timer timer)
         {
             TimeSpan timeSpan = shutdownDateTime - DateTime.Now;
@@ -95,10 +96,10 @@ namespace NexusForever.WorldServer.Command.Handler
         {
             message = $"Realm is shutting down in {message}.";
             log.Info(message);
-            foreach (WorldSession session in NetworkManager<WorldSession>.Instance.GetSessions())
+            Parallel.ForEach(NetworkManager<WorldSession>.Instance.GetSessions(), session =>
             {
                 SocialManager.Instance.SendMessage(session, message);
-            }
+            });
         }
 
         private static void Shutdown()
@@ -107,14 +108,14 @@ namespace NexusForever.WorldServer.Command.Handler
             // Gracefully disconnect all users.
             try
             {
-                foreach (WorldSession session in NetworkManager<WorldSession>.Instance.GetSessions())
+                foreach (var session in NetworkManager<WorldSession>.Instance.GetSessions())
                 {
                     session.Disconnect();
                 }
             }
             catch (InvalidOperationException exception)
             {
-                if (!exception.Message.Equals("Collection was modified after the enumerator was instantiated."))
+                if (!exception.HResult.Equals(-2146233079)) // Collection was modified after the enumerator was instantiated.
                 {
                     log.Error(exception);
                 }
@@ -122,6 +123,7 @@ namespace NexusForever.WorldServer.Command.Handler
             finally
             {
                 log.Info("All users have been disconnected.");
+                WorldManager.Instance.Shutdown();
                 Timer timer = new Timer(15000);
                 timer.Elapsed += OnShutdown;
                 timer.Start();
@@ -133,7 +135,6 @@ namespace NexusForever.WorldServer.Command.Handler
             log.Info("Realm Shutdown.");
             Timer timer = (Timer)source;
             timer?.Stop();
-            Environment.Exit(0);
         }
 
         #endregion
