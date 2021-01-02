@@ -25,6 +25,8 @@ namespace NexusForever.WorldServer.Game.Spell
         private readonly SpellParameters parameters;
         private SpellStatus status;
 
+        public uint Spell4Id => parameters.SpellInfo.Entry.Id;
+
         private readonly List<SpellTargetInfo> targets = new List<SpellTargetInfo>();
 
         private readonly SpellEventManager events = new SpellEventManager();
@@ -300,6 +302,8 @@ namespace NexusForever.WorldServer.Game.Spell
 
         private void SendSpellGo()
         {
+            List<ServerCombatLog> combatLogs = new List<ServerCombatLog>();
+
             var serverSpellGo = new ServerSpellGo
             {
                 ServerUniqueId     = CastingId,
@@ -310,6 +314,12 @@ namespace NexusForever.WorldServer.Game.Spell
             foreach (SpellTargetInfo targetInfo in targets
                 .Where(t => t.Effects.Count > 0))
             {
+                if (!targetInfo.Effects.Any(x => x.DropEffect == false))
+                {
+                    combatLogs.AddRange(targetInfo.Effects.SelectMany(i => i.CombatLogs));
+                    continue;
+                }
+
                 var networkTargetInfo = new TargetInfo
                 {
                     UnitId        = targetInfo.Entity.Guid,
@@ -320,6 +330,15 @@ namespace NexusForever.WorldServer.Game.Spell
 
                 foreach (SpellTargetInfo.SpellTargetEffectInfo targetEffectInfo in targetInfo.Effects)
                 {
+                    if (targetEffectInfo.DropEffect)
+                    {
+                        combatLogs.AddRange(targetEffectInfo.CombatLogs);
+                        continue;
+                    }
+
+                    if ((SpellEffectType)targetEffectInfo.Entry.EffectType == SpellEffectType.Proxy)
+                        continue;
+
                     var networkTargetEffectInfo = new TargetInfo.EffectInfo
                     {
                         Spell4EffectId = targetEffectInfo.Entry.Id,
@@ -339,16 +358,21 @@ namespace NexusForever.WorldServer.Game.Spell
                             AdjustedDamage     = targetEffectInfo.Damage.AdjustedDamage,
                             OverkillAmount     = targetEffectInfo.Damage.OverkillAmount,
                             KilledTarget       = targetEffectInfo.Damage.KilledTarget,
-                            CombatResult       = CombatResult.Hit,
+                            CombatResult       = targetEffectInfo.Damage.CombatResult,
                             DamageType         = targetEffectInfo.Damage.DamageType
                         };
                     }
 
                     networkTargetInfo.EffectInfoData.Add(networkTargetEffectInfo);
+
+                    combatLogs.AddRange(targetEffectInfo.CombatLogs);
                 }
 
                 serverSpellGo.TargetInfoData.Add(networkTargetInfo);
             }
+
+            foreach (ServerCombatLog combatLog in combatLogs)
+                caster.EnqueueToVisible(combatLog, true);
 
             caster.EnqueueToVisible(serverSpellGo, true);
         }
