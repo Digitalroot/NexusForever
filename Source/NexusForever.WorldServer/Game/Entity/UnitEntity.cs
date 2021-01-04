@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using NexusForever.Shared.GameTable;
 using NexusForever.Shared.GameTable.Model;
@@ -117,6 +118,19 @@ namespace NexusForever.WorldServer.Game.Entity
         {
             Spell.Spell spell = pendingSpells.SingleOrDefault(s => s.CastingId == castingId);
             spell?.CancelCast(CastResult.SpellCancelled);
+        }
+
+        public void HandleDamage(SpellTargetInfo.SpellTargetEffectInfo info)
+        {
+            if (info.Damage.AdjustedDamage > Health)
+            {
+                Health = 0;
+            }
+            else
+            {
+                Health -= info.Damage.AdjustedDamage;
+            }
+            
         }
     }
 }

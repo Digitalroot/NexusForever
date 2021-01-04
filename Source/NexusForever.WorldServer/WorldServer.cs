@@ -10,6 +10,7 @@ using NexusForever.WorldServer.Command.Context;
 using NexusForever.WorldServer.Game;
 using NexusForever.WorldServer.Game.Achievement;
 using NexusForever.WorldServer.Game.CharacterCache;
+using NexusForever.WorldServer.Game.Combat;
 using NexusForever.WorldServer.Game.Entity;
 using NexusForever.WorldServer.Game.Entity.Movement;
 using NexusForever.WorldServer.Game.Entity.Network;
@@ -29,7 +30,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using NexusForever.WorldServer.Game.Combat;
 
 namespace NexusForever.WorldServer
 {
@@ -99,7 +99,7 @@ namespace NexusForever.WorldServer
 
             managersList.Add(MessageManager.Instance.Initialise());
             managersList.Add(SocialManager.Instance.Initialise());
-            DamageCalculator.Instance.Initialise();
+            managersList.Add(DamageCalculatorManager.Instance.Initialise());
             managersList.Add(NetworkManager<WorldSession>.Instance.Initialise(ConfigurationManager<WorldServerConfiguration>.Instance.Config.Network));
             WorldManager.Instance.Initialise(lastTick =>
             {

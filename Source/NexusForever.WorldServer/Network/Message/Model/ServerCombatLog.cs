@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
-using NexusForever.Shared.GameTable.Model;
 using NexusForever.Shared.Network;
 using NexusForever.Shared.Network.Message;
 using NexusForever.WorldServer.Game.Combat.Static;
 using NexusForever.WorldServer.Game.Spell.Static;
-using NexusForever.WorldServer.Network.Message.Model;
+using System.Collections.Generic;
 
 namespace NexusForever.WorldServer.Network.Message.Model
 {

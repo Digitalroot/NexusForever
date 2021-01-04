@@ -19,13 +19,13 @@ namespace NexusForever.WorldServer.Game.Spell
         private void HandleEffectDamage(UnitEntity target, SpellTargetInfo.SpellTargetEffectInfo info)
         {
             uint damage = 0;
-            damage += DamageCalculator.Instance.GetBaseDamageForSpell(caster, info.Entry.ParameterType00, info.Entry.ParameterValue00);
-            damage += DamageCalculator.Instance.GetBaseDamageForSpell(caster, info.Entry.ParameterType01, info.Entry.ParameterValue01);
-            damage += DamageCalculator.Instance.GetBaseDamageForSpell(caster, info.Entry.ParameterType02, info.Entry.ParameterValue02);
-            damage += DamageCalculator.Instance.GetBaseDamageForSpell(caster, info.Entry.ParameterType03, info.Entry.ParameterValue03);
+            damage += DamageCalculatorManager.Instance.GetBaseDamageForSpell(caster, info.Entry.ParameterType00, info.Entry.ParameterValue00);
+            damage += DamageCalculatorManager.Instance.GetBaseDamageForSpell(caster, info.Entry.ParameterType01, info.Entry.ParameterValue01);
+            damage += DamageCalculatorManager.Instance.GetBaseDamageForSpell(caster, info.Entry.ParameterType02, info.Entry.ParameterValue02);
+            damage += DamageCalculatorManager.Instance.GetBaseDamageForSpell(caster, info.Entry.ParameterType03, info.Entry.ParameterValue03);
 
-            DamageCalculator.Instance.CalculateDamage(caster, target, this, ref info, (DamageType)info.Entry.DamageType, damage);
-            // TODO: Deal damage
+            var result = DamageCalculatorManager.Instance.CalculateDamage(caster, target, this, ref info, (DamageType)info.Entry.DamageType, damage);
+            target.HandleDamage(result);
         }
 
         [SpellEffectHandler(SpellEffectType.Proxy)]

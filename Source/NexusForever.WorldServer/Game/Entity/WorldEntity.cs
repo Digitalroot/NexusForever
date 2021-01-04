@@ -1,21 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 using NexusForever.Database.World.Model;
 using NexusForever.Shared.Network.Message;
-using NexusForever.Shared.GameTable;
-using NexusForever.WorldServer.Game.Combat;
 using NexusForever.WorldServer.Game.Entity.Movement;
 using NexusForever.WorldServer.Game.Entity.Network;
 using NexusForever.WorldServer.Game.Entity.Static;
 using NexusForever.WorldServer.Game.Map;
 using NexusForever.WorldServer.Game.Reputation;
 using NexusForever.WorldServer.Game.Reputation.Static;
-using NexusForever.WorldServer.Game.Spell;
-using NexusForever.WorldServer.Game.Spell.Static;
 using NexusForever.WorldServer.Network.Message.Model;
 using NexusForever.WorldServer.Network.Message.Model.Shared;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Numerics;
 
 namespace NexusForever.WorldServer.Game.Entity
 {
@@ -24,7 +21,7 @@ namespace NexusForever.WorldServer.Game.Entity
         public EntityType Type { get; }
         public EntityCreateFlag CreateFlags { get; set; }
         public Vector3 Rotation { get; set; } = Vector3.Zero;
-        public Dictionary<Property, PropertyValue> Properties { get; } = new Dictionary<Property, PropertyValue>();
+        public Dictionary<Property, PropertyValue> Properties { get; } = new();
 
         public uint EntityId { get; protected set; }
         public uint CreatureId { get; protected set; }
@@ -40,15 +37,24 @@ namespace NexusForever.WorldServer.Game.Entity
         public float LeashRange { get; protected set; } = 15f;
         public MovementManager MovementManager { get; private set; }
 
-        public uint Health
+        public uint? Health
         {
             get => GetStatInteger(Stat.Health) ?? 0u;
+            set
+            {
+                if (value <= 0)
+                {
+                    SetStat(Stat.Health, 0);
+                }
+                else if (value.HasValue)
+                {
+                    
+                    SetStat(Stat.Health, value.Value);
+                }
+            }
         }
 
-        public float Shield
-        {
-            get => GetStatInteger(Stat.Shield) ?? 0u;
-        }
+        public float Shield => GetStatInteger(Stat.Shield) ?? 0u;
         public bool IsAlive => GetStatInteger(Stat.Health) > 0u;
 
         public uint Level
@@ -73,9 +79,9 @@ namespace NexusForever.WorldServer.Game.Entity
         /// </summary>
         public uint ControllerGuid { get; set; }
 
-        protected readonly Dictionary<Stat, StatValue> stats = new Dictionary<Stat, StatValue>();
+        protected readonly Dictionary<Stat, StatValue> stats = new();
 
-        private readonly Dictionary<ItemSlot, ItemVisual> itemVisuals = new Dictionary<ItemSlot, ItemVisual>();
+        private readonly Dictionary<ItemSlot, ItemVisual> itemVisuals = new();
 
         /// <summary>
         /// Create a new <see cref="WorldEntity"/> with supplied <see cref="EntityType"/>.
