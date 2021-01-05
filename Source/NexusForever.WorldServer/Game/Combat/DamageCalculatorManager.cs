@@ -6,15 +6,12 @@ using NexusForever.WorldServer.Game.Entity.Static;
 using NexusForever.WorldServer.Game.Spell;
 using NexusForever.WorldServer.Game.Spell.Static;
 using NexusForever.WorldServer.Network.Message.Model;
-using NLog;
 using System;
 
 namespace NexusForever.WorldServer.Game.Combat
 {
-    public sealed class DamageCalculatorManager : Singleton<DamageCalculatorManager>, IShutdownAble
+    public sealed class DamageCalculatorManager : AbstractManager<DamageCalculatorManager>
     {
-        private static readonly ILogger log = LogManager.GetCurrentClassLogger();
-
         private readonly float assaultRatingToPowerFormula = GameTableManager.Instance.GameFormula.GetEntry(1266).Datafloat0;
         private readonly float supportRatingToPowerFormula = GameTableManager.Instance.GameFormula.GetEntry(1266).Datafloat01;
 
@@ -22,7 +19,7 @@ namespace NexusForever.WorldServer.Game.Combat
         {
         }
 
-        public DamageCalculatorManager Initialise()
+        public override DamageCalculatorManager Initialise()
         {
             // Intentionally empty, but this could be a place to allow for setting of values from configuration, if allowing for damage/health modifications in config.
             return Instance;
@@ -104,17 +101,13 @@ namespace NexusForever.WorldServer.Game.Combat
         /// </summary>
         public uint GetBaseDamageForSpell(UnitEntity attacker, float parameterType, float parameterValue)
         {
-            switch (parameterType)
+            return parameterType switch
             {
-                case 10:
-                    return (uint) Math.Round(attacker.Level * parameterValue);
-                case 12:
-                    return (uint) Math.Round(GetAssaultPower(attacker) * parameterValue);
-                case 13:
-                    return (uint) Math.Round(GetSupportPower(attacker) * parameterValue);
-            }
-
-            return 0u;
+                10 => (uint) Math.Round(attacker.Level * parameterValue),
+                12 => (uint) Math.Round(GetAssaultPower(attacker) * parameterValue),
+                13 => (uint) Math.Round(GetSupportPower(attacker) * parameterValue),
+                _ => 0u
+            };
         }
 
         private uint GetAssaultPower(UnitEntity attacker)
@@ -314,7 +307,7 @@ namespace NexusForever.WorldServer.Game.Combat
                     break;
 
                 default:
-                    log.Warn($"Unhandled Property in calculating Percentage from Rating: {property}");
+                    Log.Warn($"Unhandled Property in calculating Percentage from Rating: {property}");
                     break;
             }
 
@@ -420,17 +413,11 @@ namespace NexusForever.WorldServer.Game.Combat
                     break;
 
                 default:
-                    log.Warn($"Unhandled Property in calculating Percentage from Base: {property}");
+                    Log.Warn($"Unhandled Property in calculating Percentage from Base: {property}");
                     break;
             }
 
             return baseValue;
-        }
-
-        /// <inheritdoc />
-        public void Shutdown()
-        {
-            
         }
     }
 }
