@@ -86,16 +86,8 @@ namespace NexusForever.WorldServer
             managersList.Add(EntityCacheManager.Instance.Initialise());
             managersList.Add(FactionManager.Instance.Initialise());
             managersList.Add(GlobalMovementManager.Instance.Initialise());
+            managersList.Add(GlobalGuildManager.Instance.Initialise());
 
-            GameTableManager.Instance.Initialise();
-            BaseMapManager.Instance.Initialise();
-            SearchManager.Instance.Initialise();
-            EntityManager.Instance.Initialise();
-            EntityCommandManager.Instance.Initialise();
-            EntityCacheManager.Instance.Initialise();
-            FactionManager.Instance.Initialise();
-            GlobalMovementManager.Instance.Initialise();
-            GlobalGuildManager.Instance.Initialise();
             managersList.Add(AssetManager.Instance.Initialise());
             managersList.Add(PrerequisiteManager.Instance.Initialise());
             managersList.Add(GlobalSpellManager.Instance.Initialise());
@@ -112,7 +104,7 @@ namespace NexusForever.WorldServer
             managersList.Add(SocialManager.Instance.Initialise());
             managersList.Add(DamageCalculatorManager.Instance.Initialise());
             managersList.Add(NetworkManager<WorldSession>.Instance.Initialise(ConfigurationManager<WorldServerConfiguration>.Instance.Config.Network));
-            TextFilterManager.Instance.Initialise();
+            managersList.Add(TextFilterManager.Instance.Initialise());
 
             WorldManager.Instance.Initialise(lastTick =>
             {
