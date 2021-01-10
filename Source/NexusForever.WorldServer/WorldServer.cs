@@ -64,7 +64,7 @@ namespace NexusForever.WorldServer
             Console.Title = Title;
             log.Info("Initialising...");
 
-            var managersList = new List<IShutdownAble>();
+            var managersList = new List<IShutdown>();
 
             managersList.Add(ConfigurationManager<WorldServerConfiguration>.Instance.Initialise("WorldServer.json"));
             RealmId   = ConfigurationManager<WorldServerConfiguration>.Instance.Config.RealmId;
@@ -88,6 +88,7 @@ namespace NexusForever.WorldServer
             managersList.Add(GlobalMovementManager.Instance.Initialise());
             managersList.Add(GlobalGuildManager.Instance.Initialise());
 
+            managersList.Add(GlobalGuildManager.Instance.Initialise());
             managersList.Add(AssetManager.Instance.Initialise());
             managersList.Add(PrerequisiteManager.Instance.Initialise());
             managersList.Add(GlobalSpellManager.Instance.Initialise());
@@ -105,7 +106,6 @@ namespace NexusForever.WorldServer
             managersList.Add(DamageCalculatorManager.Instance.Initialise());
             managersList.Add(NetworkManager<WorldSession>.Instance.Initialise(ConfigurationManager<WorldServerConfiguration>.Instance.Config.Network));
             managersList.Add(TextFilterManager.Instance.Initialise());
-
             WorldManager.Instance.Initialise(lastTick =>
             {
                 // NetworkManager must be first and MapManager must come before everything else
@@ -137,20 +137,13 @@ namespace NexusForever.WorldServer
                     }
                 }
             });
-
+            worldThread.IsBackground = true;
             worldThread.Start();
         }
 
         private static void OnShutdown()
         {
             shutdownRequested = true;
-
-            #if DEBUG
-                Environment.Exit(0);
-            #else
-                Console.WriteLine($"World Server shutdown.");
-                Console.WriteLine($"Press any key to quit...");
-            #endif
         }
     }
 }

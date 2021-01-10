@@ -29,9 +29,9 @@ namespace NexusForever.WorldServer.Game.Guild
         public ulong NextGuildId => nextGuildId++;
         private ulong nextGuildId;
 
-        private readonly Dictionary</*guildId*/ ulong, GuildBase> guilds = new();
-        private readonly Dictionary<string, ulong> guildNameCache = new(StringComparer.InvariantCultureIgnoreCase);
-        private readonly Dictionary<ulong, List<ulong>> guildMemberCache = new();
+        private readonly Dictionary</*guildId*/ ulong, GuildBase> guilds = new Dictionary</*guildId*/ ulong, GuildBase>();
+        private readonly Dictionary<string, ulong> guildNameCache = new Dictionary<string, ulong>(StringComparer.InvariantCultureIgnoreCase);
+        private readonly Dictionary<ulong, List<ulong>> guildMemberCache = new Dictionary<ulong, List<ulong>>();
 
         private ImmutableDictionary<GuildOperation, (GuildOperationHandlerDelegate, GuildOperationHandlerResultDelegate)> guildOperationHandlers;
         private delegate GuildResultInfo GuildOperationHandlerResultDelegate(GuildBase guild, GuildMember member, Player player, ClientGuildOperation operation);
@@ -76,7 +76,7 @@ namespace NexusForever.WorldServer.Game.Guild
                         guild = new Community(model);
                         break;
                     default:
-                        throw new DatabaseDataException($"Guild type not recognised {(GuildType)model.Type} for guild {model.Id}!");
+                        throw new DatabaseDataException($"Guild type not recognized {(GuildType)model.Type} for guild {model.Id}!");
                 }
 
                 guilds.Add(guild.Id, guild);
